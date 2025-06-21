@@ -1,0 +1,22 @@
+
+# Core Agno framework
+agno>=0.1.0
+
+# AI Model providers
+openai>=1.0.0
+anthropic>=0.18.0
+google-generativeai>=0.3.0
+
+# Tools and utilities
+yfinance>=0.2.18
+
+
+# Development and utilities
+python-dotenv>=1.0.0
+
+# Other
+newspaper4k
+lxml_html_clean
+exa_py
+lancedb
+tantivy

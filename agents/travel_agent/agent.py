@@ -126,12 +126,17 @@ travel_agent = Agent(
     show_tool_calls=True,
 )
 
+
 # Example use case
 if __name__ == "__main__":
     travel_agent.print_response(
-        "Help me organize a 3-day offsite in London for 14 colleagues from March 28-30 with a budget of $10,000 each. "
-        "Please suggest accommodations, activities, coworking spaces, and detailed daily itinerary including transport.",
+        dedent("""
+        Help me organize a 3-day offsite in London for 14 colleagues from March 28-30 with a budget of $10,000 each.
+        Please suggest accommodations, activities, coworking spaces, and detailed daily itinerary including transport.
+        """
+        ),
         stream=True,
+        markdown=False
     )
 
 # Fresh example prompts to inspire users:

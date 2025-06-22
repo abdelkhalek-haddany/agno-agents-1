@@ -1,8 +1,25 @@
+"""👨‍🍳 Recipe Creator - Your Personal AI Chef!
+
+This example shows how to create an intelligent recipe recommendation system that provides
+detailed, personalized recipes based on your ingredients, dietary preferences, and time constraints.
+The agent combines culinary knowledge, nutritional data, and cooking techniques to deliver
+comprehensive cooking instructions.
+
+Example prompts to try:
+- "I have chicken, rice, and vegetables. What can I make in 30 minutes?"
+- "Create a vegetarian pasta recipe with mushrooms and spinach"
+- "Suggest healthy breakfast options with oats and fruits"
+- "What can I make with leftover turkey and potatoes?"
+- "Need a quick dessert recipe using chocolate and bananas"
+
+Run: `pip install openai exa_py agno` to install the dependencies
+"""
+
 from textwrap import dedent
 
 from agno.agent import Agent
+from agno.models.openai import OpenAIChat
 from agno.tools.exa import ExaTools
-
 from agno.models.openai import OpenAIChat
 import os
 import sys
@@ -15,108 +32,112 @@ from config.settings import Settings
 #Verify the env variables
 settings = Settings()
 settings.validate()
-
 recipe_agent = Agent(
     name="ChefGenius",
-    model=OpenAIChat(id="gpt-4o", api_key=settings.openai_api_key),
     tools=[ExaTools()],
+    model=OpenAIChat(id="gpt-4o-min", api_key=settings.openai_api_key),
     description=dedent("""\
-        Meet ChefGenius — your culinary companion passionate about worldwide flavors! 🍽️
+        You are ChefGenius, a passionate and knowledgeable culinary expert with expertise in global cuisine! 🍳
 
-        ChefGenius specializes in crafting tailored recipes that fit your pantry, dietary needs, and schedule.
-        Combining culinary mastery with nutrition insight, ChefGenius helps you cook meals that delight and nourish."""),
+        Your mission is to help users create delicious meals by providing detailed,
+        personalized recipes based on their available ingredients, dietary restrictions,
+        and time constraints. You combine deep culinary knowledge with nutritional wisdom
+        to suggest recipes that are both practical and enjoyable."""),
     instructions=dedent("""\
-        Here’s how to deliver the perfect recipe recommendation:
+        Approach each recipe recommendation with these steps:
 
-        1) Ingredient & User Profile Assessment 🥕
-           - Identify available ingredients
-           - Account for allergies and dietary preferences
-           - Respect time limitations
-           - Consider cooking experience and kitchen tools on hand
+        1. Analysis Phase 📋
+           - Understand available ingredients
+           - Consider dietary restrictions
+           - Note time constraints
+           - Factor in cooking skill level
+           - Check for kitchen equipment needs
 
-        2) Recipe Discovery & Matching 🔎
-           - Query Exa database for fitting recipes
-           - Match ingredients precisely or suggest substitutions
-           - Confirm preparation and cook time align with constraints
-           - Prioritize seasonal and fresh components
-           - Review user ratings and feedback
+        2. Recipe Selection 🔍
+           - Use Exa to search for relevant recipes
+           - Ensure ingredients match availability
+           - Verify cooking times are appropriate
+           - Consider seasonal ingredients
+           - Check recipe ratings and reviews
 
-        3) Recipe Presentation & Detailing 📖
-           - Clearly state dish name and cuisine origin
-           - List prep time, cooking time, and difficulty
-           - Provide comprehensive ingredients with exact quantities
-           - Outline clear, numbered cooking steps
-           - Share nutritional facts per serving
-           - Specify serving size and storage tips
+        3. Detailed Information 📝
+           - Recipe title and cuisine type
+           - Preparation time and cooking time
+           - Complete ingredient list with measurements
+           - Step-by-step cooking instructions
+           - Nutritional information per serving
+           - Difficulty level
+           - Serving size
+           - Storage instructions
 
-        4) Added Value Tips ✨
-           - Suggest ingredient swaps or allergen-free alternatives
-           - Highlight common errors and how to avoid them
-           - Offer plating and presentation ideas
-           - Recommend complementary wines or beverages
-           - Share advice for leftover use and meal prepping
+        4. Extra Features ✨
+           - Ingredient substitution options
+           - Common pitfalls to avoid
+           - Plating suggestions
+           - Wine pairing recommendations
+           - Leftover usage tips
+           - Meal prep possibilities
 
-        Formatting & Style:
-        - Use well-structured markdown
-        - Present ingredients in bullet or table form
-        - Number cooking instructions stepwise
-        - Use emojis to denote:
+        Presentation Style:
+        - Use clear markdown formatting
+        - Present ingredients in a structured list
+        - Number cooking steps clearly
+        - Add emoji indicators for:
           🌱 Vegetarian
           🌿 Vegan
           🌾 Gluten-free
           🥜 Contains nuts
-          ⏳ Quick to prepare
-        - Provide portion scaling guidance
-        - Flag allergens prominently
-        - Note any advance prep steps
-        - Suggest ideal side dishes or accompaniments
-    """),
+          ⏱️ Quick recipes
+        - Include tips for scaling portions
+        - Note allergen warnings
+        - Highlight make-ahead steps
+        - Suggest side dish pairings"""),
     markdown=True,
     add_datetime_to_instructions=True,
     show_tool_calls=True,
 )
 
-# Example queries for testing
+# Example usage with different types of recipe queries
 recipe_agent.print_response(
-    "I have chicken breast, broccoli, garlic, and rice. Suggest a nutritious dinner recipe that takes no longer than 45 minutes.",
+    "I have chicken breast, broccoli, garlic, and rice. Need a healthy dinner recipe that takes less than 45 minutes.",
     stream=True,
 )
 
-# Additional example prompts to explore:
+# More example prompts to explore:
 """
-Fast & Simple:
-1. "30-minute pasta dishes with fresh vegetables"
-2. "Healthy meal prep ideas for busy weekdays"
-3. "Quick breakfasts featuring eggs and avocado"
-4. "Cold dinners perfect for summer evenings"
+Quick Meals:
+1. "15-minute dinner ideas with pasta and vegetables"
+2. "Quick healthy lunch recipes for meal prep"
+3. "Easy breakfast recipes with eggs and avocado"
+4. "No-cook dinner ideas for hot summer days"
 
-Diet-Friendly:
-1. "Low-carb salmon dinner recipes"
-2. "Egg-free gluten-free breakfast options"
-3. "Protein-rich vegetarian meals for fitness enthusiasts"
-4. "Pasta substitutes suitable for keto diet"
+Dietary Restrictions:
+1. "Keto-friendly dinner recipes with salmon"
+2. "Gluten-free breakfast options without eggs"
+3. "High-protein vegetarian meals for athletes"
+4. "Low-carb alternatives to pasta dishes"
 
-Celebrations:
-1. "Dinner party entrees for six guests"
-2. "Romantic meals for two"
-3. "Birthday party snacks kids love"
-4. "Make-ahead desserts for holidays"
+Special Occasions:
+1. "Impressive dinner party main course for 6 people"
+2. "Romantic dinner recipes for two"
+3. "Kid-friendly birthday party snacks"
+4. "Holiday desserts that can be made ahead"
 
-Global Flavors:
-1. "Easy-to-make Thai curries with pantry staples"
-2. "Beginner-friendly Japanese dishes"
-3. "Mediterranean diet-inspired dinners"
-4. "Mexican classics with modern twists"
+International Cuisine:
+1. "Authentic Thai curry with available ingredients"
+2. "Simple Japanese recipes for beginners"
+3. "Mediterranean diet dinner ideas"
+4. "Traditional Mexican recipes with modern twists"
 
-Seasonal Eats:
-1. "Summer salads using fresh produce"
-2. "Hearty soups for cold weather"
-3. "Fall vegetable roasting ideas"
-4. "Spring picnic-friendly recipes"
+Seasonal Cooking:
+1. "Summer salad recipes with seasonal produce"
+2. "Warming winter soups and stews"
+3. "Fall harvest vegetable recipes"
+4. "Spring picnic recipe ideas"
 
 Batch Cooking:
-1. "Meals that freeze well for later"
-2. "One-pot dinners for hectic nights"
-3. "Breakfast ideas you can prepare ahead"
-4. "Cooking in bulk for large households"
+1. "Freezer-friendly meal prep recipes"
+2. "One-pot meals for busy weeknights"
+3. "Make-ahead breakfast ideas"
+4. "Bulk cooking recipes for large families"
 """

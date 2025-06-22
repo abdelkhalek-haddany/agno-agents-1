@@ -1,18 +1,18 @@
 
 # Core Agno framework
-agno>=0.1.0
+agno
 
 # AI Model providers
-openai>=1.0.0
-anthropic>=0.18.0
-google-generativeai>=0.3.0
+openai
+anthropic
+google-generativeai
 
 # Tools and utilities
-yfinance>=0.2.18
+yfinance
 
 
 # Development and utilities
-python-dotenv>=1.0.0
+python-dotenv
 
 # Other
 newspaper4k
@@ -20,3 +20,15 @@ lxml_html_clean
 exa_py
 lancedb
 tantivy
+duckduckgo-search
+firecrawl-py
+cartesia
+ffmpeg
+youtube_transcript_api
+tweepy
+pypdf
+psycopg
+sqlalchemy
+pgvector
+inquirer
+mcp

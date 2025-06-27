@@ -3,7 +3,10 @@ from textwrap import dedent
 from agno.agent import Agent
 from agno.tools.youtube import YouTubeTools
 import os
+from agno.models.google import Gemini
 
+
+    
 from agno.models.openai import OpenAIChat
 import os
 import sys
@@ -12,15 +15,14 @@ sys.path.insert(0, project_root)
 
 from config.settings import Settings
 
-
 #Verify the env variables
 settings = Settings()
 settings.validate()
 
-
 youtube_agent = Agent(
+    model=Gemini(id="gemini-2.0-flash", api_key=settings.gemini_api_key),
     name="YouTube Video Content Analyst",
-    model=OpenAIChat(id="gpt-4o", api_key=settings.openai_api_key),
+    # model=OpenAIChat(id="gpt-4o", api_key=settings.openai_api_key),
     tools=[YouTubeTools()],
     show_tool_calls=True,
     instructions=dedent("""\
@@ -68,7 +70,7 @@ youtube_agent = Agent(
 # Example queries for testing and demo
 
 youtube_agent.print_response(
-    "Perform a detailed breakdown of this tutorial video: https://www.youtube.com/watch?v=nLkBNnnA8Ac",
+    "Perform a detailed breakdown of this tutorial video: https://www.youtube.com/watch?v=1wMM87UKr_c",
     stream=True,
 )
 

@@ -9,6 +9,7 @@ class Settings:
     
     def __init__(self):
         self.openai_api_key = os.getenv("OPENAI_API_KEY")
+        self.gemini_api_key = os.getenv("GOOGLE_API_KEY")
         self.fire_crawl_api_key = os.getenv("FIRE_CRAWL_API_KEY")
 
     def validate(self):

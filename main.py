@@ -6,27 +6,31 @@ Interactive CLI for running and managing multiple AI agents
 
 import os
 import sys
-from typing import Dict, Any
 import click
 from rich.console import Console
 from rich.panel import Panel
 from rich.prompt import Prompt
 from rich.table import Table
 from dotenv import load_dotenv
+import importlib # Added import for dynamic loading
+import inspect # Added import for dynamic loading
+from typing import Dict, Any # Keep existing import
 
 # Load environment variables
 load_dotenv()
 
-# Import all agents you have
-from agents.finance_agent.agent import finance_agent
-from agents.youtube_agent.agent import youtube_agent
-from agents.research_agent.agent import research_agent
-from agents.movie_recommender.agent import movie_agent
-from agents.books_recommender.agent import book_agent
-from agents.travel_agent.agent import travel_agent
+# Removed hardcoded agent imports
+# from agents.finance_agent.agent import finance_agent
+# from agents.youtube_agent.agent import youtube_agent
+# from agents.research_agent.agent import research_agent
+# from agents.movie_recommender.agent import movie_agent
+# from agents.books_recommender.agent import book_agent
+# from agents.travel_agent.agent import travel_agent
 
 from utils.logging_config import setup_logging
 from config.settings import Settings
+from agno.agent import Agent
+
 
 # Initialize console and logging
 console = Console()
@@ -42,71 +46,125 @@ class AgentOrchestrator:
         self.initialize_agents()
 
     def initialize_agents(self):
-        """Initialize all available agents"""
-        agent_configs = {
-            'finance': {
-                'name': 'Enhanced Finance Agent',
-                'description': 'Advanced financial analysis with ESG factors and crypto support',
-                'creator': finance_agent,
-                'emoji': '💰'
-            },
-            'youtube': {
-                'name': 'Advanced YouTube Agent',
-                'description': 'Intelligent video analysis with multi-language support',
-                'creator': youtube_agent,
-                'emoji': '🎥'
-            },
-            'research': {
-                'name': 'Enhanced Research Agent',
-                'description': 'Academic research with fact-checking and citation formatting',
-                'creator': research_agent,
-                'emoji': '🔬'
-            },
-            'movie': {
-                'name': 'Movie Recommendation Agent',
-                'description': 'Personalized cinema recommendations',
-                'creator': movie_agent,
-                'emoji': '🎬'
-            },
-            'book': {
-                'name': 'Book Recommendation Agent',
-                'description': 'Personalized book recommendations',
-                'creator': book_agent,
-                'emoji': '📚'
-            },
-            'travel': {
-                'name': 'Travel Planning Agent',
-                'description': 'Expert travel itineraries and logistics',
-                'creator': travel_agent,
-                'emoji': '🌍'
-            }
+        """Initialize all available agents by dynamically loading them"""
+        agents_root_dir = os.path.join(os.path.dirname(__file__), 'agents')
+        if not os.path.isdir(agents_root_dir):
+            logger.error(f"Agents root directory not found: {agents_root_dir}")
+            return
+
+        # Add the project root to sys.path if not already there
+        project_root = os.path.dirname(__file__) # Assuming main.py is at project root
+        if project_root not in sys.path:
+             sys.path.insert(0, project_root)
+
+        # Emoji mapping for known agents (can be extended)
+        emoji_map = {
+            'finance_agent': '💰',
+            'youtube_agent': '🎥',
+            'research_agent': '🔬',
+            'movie_recommendation': '🎬',
+            'books_recommendation': '📚',
+            'travel_agent': '🌍',
+            'agent_team': '👥',
+            'agent_with_instructions': '📝',
+            'agent_with_knowledge': '🧠',
+            'agent_with_memory': '💾',
+            'agent_with_reasoning': '🤔',
+            'agent_with_storage': '📦',
+            'agent_with_tools': '🔧',
+            'agno_assist': '✨',
+            'agno_support_agent': '🤝',
+            'airbnb_mcp': '🏠',
+            'basic_agent': '👤',
+            'competitor_analysis': '📊',
+            'deep_knowledge': '📚',
+            'deep_research_agent_exa': '🔍',
+            'finance_agent_with_memory': '💾💰',
+            'legal_consultant': '⚖️',
+            'media_trend_analysis_agent': '📈',
+            'meeting_summarizer_agent': '📝',
+            'my_first_agents': '👶', # This folder contains subfolders, the key will be the subfolder name (level1, level2, etc.)
+            'readme_generator': '📄',
+            'reasoning_finance_agent': '🤔💰',
+            'recipe_creator': '🍳',
+            'recipe_rag_image': '🖼️🍳',
+            'shopping_partner': '🛍️',
+            'social_media_agent': '📱',
+            'study_partner': '📖',
+            'thinking_finance_agent': '🧠💰',
+            'translation_agent': '🗣️',
+            'web_extraction_agent': '🕸️',
+            # Add emojis for nested agents if needed, e.g.,
+            'level1': '1️⃣',
+            'level2': '2️⃣',
+            'level3': '3️⃣',
         }
 
-        for key, config in agent_configs.items():
-            try:
-                self.agents[key] = {
-                    'config': config,
-                    'instance': None  # Lazy loading
-                }
-                logger.info(f"Registered agent: {config['name']}")
-            except Exception as e:
-                logger.error(f"Failed to register agent {key}: {e}")
-                console.print(f"[red]Warning: Could not register {config['name']}[/red]")
+
+        # Walk through the agents directory to find agent.py files
+        for root, dirs, files in os.walk(agents_root_dir):
+            if 'agent.py' in files and '__init__.py' in files:
+                # Construct the module path
+                # root will be something like c:\Users\NITRO\Documents\AI\Projects\Test1Agno\Test1Agno\agents\finance_agent
+                # We need the path relative to the project root, then convert to module path
+                relative_root = os.path.relpath(root, project_root) # e.g., agents\finance_agent
+                module_path_parts = relative_root.split(os.sep) # e.g., ['agents', 'finance_agent']
+                module_path = ".".join(module_path_parts) + ".agent" # e.g., agents.finance_agent.agent
+
+                # Use the last part of the relative path as the agent key
+                agent_key = module_path_parts[-1] # e.g., finance_agent
+
+                try:
+                    module = importlib.import_module(module_path)
+                    logger.info(f"Attempting to load agent from module: {module_path}")
+
+                    found_agent = None
+                    agent_name = agent_key.replace('_', ' ').title() # Default name from folder
+                    agent_description = "No description available" # Default description
+                    emoji = emoji_map.get(agent_key, '❓') # Get emoji from map
+
+                    # Find an Agent instance within the module
+                    for name, obj in inspect.getmembers(module):
+                        if isinstance(obj, Agent):
+                            found_agent = obj
+                            # Try to get name and description from the agent instance
+                            if hasattr(obj, 'name') and obj.name:
+                                 agent_name = obj.name
+                            if hasattr(obj, 'description') and obj.description:
+                                 agent_description = obj.description
+                            # Found an agent instance, stop searching in this module
+                            break
+
+                    if found_agent:
+                        # Handle potential key conflicts if multiple agent.py files are in folders with the same name
+                        if agent_key in self.agents:
+                             logger.warning(f"Duplicate agent key found: {agent_key}. Skipping module {module_path}")
+                             console.print(f"[yellow]Warning: Skipping duplicate agent ID: {agent_key}[/yellow]")
+                             continue
+
+                        self.agents[agent_key] = {
+                            'config': {
+                                'name': agent_name,
+                                'description': agent_description,
+                                'emoji': emoji
+                            },
+                            'instance': found_agent # Store the instance directly
+                        }
+                        logger.info(f"Registered agent: {agent_name} (ID: {agent_key}) from {module_path}")
+                    else:
+                        logger.warning(f"No Agno Agent instance found in {module_path}")
+                        console.print(f"[yellow]Warning: No Agno Agent found in {module_path}[/yellow]")
+
+                except Exception as e:
+                    logger.error(f"Failed to import or process agent module {module_path}: {e}")
+                    console.print(f"[red]Warning: Could not load agent from {module_path}: {e}[/red]")
 
     def get_agent_instance(self, agent_key: str):
-        """Get or create agent instance (lazy loading)"""
+        """Get agent instance (already loaded during initialization)"""
         if agent_key not in self.agents:
             raise ValueError(f"Agent {agent_key} not found")
 
-        if self.agents[agent_key]['instance'] is None:
-            try:
-                creator = self.agents[agent_key]['config']['creator']
-                self.agents[agent_key]['instance'] = creator()
-                logger.info(f"Created instance for {agent_key}")
-            except Exception as e:
-                logger.error(f"Failed to create agent {agent_key}: {e}")
-                raise
-
+        # The instance is already loaded during initialization
         return self.agents[agent_key]['instance']
 
     def display_welcome(self):
@@ -122,16 +180,18 @@ class AgentOrchestrator:
         table.add_column("ID", style="cyan", no_wrap=True)
         table.add_column("Name", style="yellow")
         table.add_column("Description", style="green")
-        table.add_column("Status", justify="center")
+        # Removed Status column as all agents are loaded on startup now
 
-        for key, agent_info in self.agents.items():
+        # Sort agents by key for consistent display
+        sorted_agent_keys = sorted(self.agents.keys())
+
+        for key in sorted_agent_keys:
+            agent_info = self.agents[key]
             config = agent_info['config']
-            status = "🟢 Ready" if agent_info['instance'] is None else "🔵 Loaded"
             table.add_row(
                 f"{config['emoji']} {key}",
                 config['name'],
-                config['description'],
-                status
+                config['description']
             )
 
         console.print(table)
@@ -145,7 +205,9 @@ class AgentOrchestrator:
             try:
                 # Agent selection
                 console.print("[bold]Available commands:[/bold]")
-                console.print("• Enter agent ID (finance, youtube, research, movie, book, travel)")
+                # List available agent IDs dynamically
+                agent_ids = ", ".join(sorted(self.agents.keys()))
+                console.print(f"• Enter agent ID ({agent_ids})")
                 console.print("• 'list' - Show available agents")
                 console.print("• 'exit' - Quit the program")
                 console.print()
@@ -180,9 +242,8 @@ class AgentOrchestrator:
         console.print(f"[dim]{config['description']}[/dim]\n")
 
         try:
-            # Load agent
-            with console.status(f"[bold green]Loading {config['name']}..."):
-                agent = self.get_agent_instance(agent_key)
+            # Agent is already loaded during initialization
+            agent = self.get_agent_instance(agent_key)
 
             console.print(f"[green]✅ {config['name']} is ready![/green]\n")
 
@@ -190,66 +251,28 @@ class AgentOrchestrator:
             while True:
                 console.print("[bold]Agent commands:[/bold]")
                 console.print("• Enter your query")
-                console.print("• 'examples' - Show example queries")
-                console.print("• 'back' - Return to main menu")
+                console.print("• 'back' - Return to main menu") # Removed 'examples'
                 console.print()
 
                 query = Prompt.ask(
                     f"[bold cyan]{config['emoji']} {config['name']}[/bold cyan]",
-                    default="examples"
+                    # Removed default="examples"
                 )
 
                 if query.lower() == 'back':
                     break
-                elif query.lower() == 'examples':
-                    self.show_agent_examples(agent_key)
+                # Removed elif query.lower() == 'examples':
                 else:
                     self.process_agent_query(agent, query, config)
 
         except Exception as e:
             logger.error(f"Error interacting with agent {agent_key}: {e}")
-            console.print(f"[red]Error loading agent: {e}[/red]")
+            console.print(f"[red]Error interacting with agent: {e}[/red]") # Changed message slightly
 
-    def show_agent_examples(self, agent_key: str):
-        """Show examples for a specific agent"""
-        examples = {
-            'finance': [
-                "What's the latest news and financial performance of Tesla (TSLA)?",
-                "Analyze Apple's ESG performance and sustainability metrics",
-                "Compare Bitcoin and Ethereum market trends this week"
-            ],
-            'youtube': [
-                "Analyze this tech tutorial: https://www.youtube.com/watch?v=example",
-                "Extract key learning points from this educational video",
-                "Create timestamps for this programming course"
-            ],
-            'research': [
-                "Research the latest developments in quantum computing",
-                "Find and analyze recent papers on climate change solutions",
-                "Compare different approaches to renewable energy storage"
-            ],
-            'movie': [
-                "Suggest thriller movies similar to Inception and Shutter Island",
-                "What are the top-rated comedy movies from the last 2 years?",
-                "Find me Korean movies similar to Parasite and Oldboy"
-            ],
-            'book': [
-                "I really enjoyed 'Anxious People' and 'Lessons in Chemistry', can you suggest similar books?",
-                "Recommend contemporary literary fiction like 'Beautiful World, Where Are You'",
-                "Suggest books about mental health with hopeful endings"
-            ],
-            'travel': [
-                "Plan a corporate retreat in Bali for 20 people",
-                "Create a 5-day cultural itinerary in Rome",
-                "Suggest budget travel options in Southeast Asia"
-            ]
-        }
-
-        if agent_key in examples:
-            console.print(f"[bold magenta]Example queries for {agent_key}:[/bold magenta]")
-            for i, example in enumerate(examples[agent_key], 1):
-                console.print(f"  {i}. {example}")
-            console.print()
+    # Removed show_agent_examples method
+    # def show_agent_examples(self, agent_key: str):
+    #     """Show examples for a specific agent"""
+    #     ...existing code...
 
     def process_agent_query(self, agent, query: str, config: Dict[str, Any]):
         """Process a query with the specified agent"""
@@ -258,10 +281,23 @@ class AgentOrchestrator:
 
             # Run the agent query
             with console.status("[bold green]Thinking..."):
+                # Assuming print_response returns the response object or string
+                # If it prints directly and returns None, this needs adjustment
+                # The original code had `response = agent.print_response(...)` which implies it returns something.
                 response = agent.print_response(query, stream=False)
 
             console.print(f"\n[bold green]✅ Response from {config['name']}:[/bold green]")
-            console.print(response)
+            # Check if response is None or has a specific attribute to print
+            if response is not None:
+                 # Assuming the response object has a 'content' attribute or can be printed directly
+                 # Based on previous examples, agent.print_response seems to handle printing directly when stream=True.
+                 # When stream=False, it might return the final response object.
+                 # Let's assume it returns a string or an object that prints nicely.
+                 console.print(response)
+            else:
+                 # If print_response handles printing directly even with stream=False
+                 pass # Nothing to print here, it was already printed by agent.print_response
+
             console.print("-" * 50)
 
         except Exception as e:

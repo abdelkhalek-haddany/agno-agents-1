@@ -53,5 +53,5 @@ agent = Agent(
     response_model=PageInformation,
 )
 
-result = agent.run("Extract all information from https://www.agno.com")
+result = agent.run("Extract all information from https://www.talentperformer.com")
 pprint(result.content)

@@ -16,7 +16,7 @@ settings = Settings()
 settings.validate()
 
 study_partner = Agent(
-    name="StudyScout",  # Fixed typo in name
+    name="StudyScout",
     model=OpenAIChat(id="gpt-4o-min", api_key=settings.openai_api_key),
     tools=[ExaTools(), YouTubeTools()],
     markdown=True,
@@ -33,6 +33,6 @@ study_partner = Agent(
     ],
 )
 study_partner.print_response(
-    "I want to learn about Postgres in depth. I know the basics, have 2 weeks to learn, and can spend 3 hours daily. Please share some resources and a study plan.",
+    "I want to learn about Deep learning in depth. I know the basics, have 2 weeks to learn, and can spend 3 hours daily. Please share some resources and a study plan.",
     stream=True,
 )

@@ -10,7 +10,6 @@ sys.path.insert(0, project_root)
 from config.settings import Settings
 
 
-#Verify the env variables
 settings = Settings()
 settings.validate()
 agent = Agent(

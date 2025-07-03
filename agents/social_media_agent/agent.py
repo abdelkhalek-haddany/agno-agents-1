@@ -1,13 +1,4 @@
-"""Social Media Agent Example with Dummy Dataset
-
-This example demonstrates how to create an agent that:
-1. Analyzes a dummy dataset of tweets
-2. Leverages LLM capabilities to perform sophisticated sentiment analysis
-3. Provides insights about the overall sentiment around a topic
-"""
-
 from agno.agent import Agent
-from agno.models.openai import OpenAIChat
 from agno.tools.x import XTools
 from agno.models.openai import OpenAIChat
 import os
@@ -17,11 +8,9 @@ sys.path.insert(0, project_root)
 
 from config.settings import Settings
 
-
-#Verify the env variables
 settings = Settings()
 settings.validate()
-# Create the social media analysis agent
+
 social_media_agent = Agent(
     name="Social Media Analyst",
     model=OpenAIChat(id="gpt-4o-min", api_key=settings.openai_api_key),
@@ -109,5 +98,5 @@ social_media_agent = Agent(
 )
 
 social_media_agent.print_response(
-    "Analyze the sentiment of Agno and AgnoAGI on X (Twitter) for past 10 tweets"
+    "Analyze the sentiment of United States on X (Twitter) for past 10 tweets"
 )

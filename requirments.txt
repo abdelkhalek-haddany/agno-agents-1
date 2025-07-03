@@ -32,3 +32,7 @@ sqlalchemy
 pgvector
 inquirer
 mcp
+cohere
+groq
+google-genai
+chromadb

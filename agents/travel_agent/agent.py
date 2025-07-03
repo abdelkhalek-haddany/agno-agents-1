@@ -131,7 +131,7 @@ travel_agent = Agent(
 if __name__ == "__main__":
     travel_agent.print_response(
         dedent("""
-        Help me organize a 3-day offsite in London for 14 colleagues from March 28-30 with a budget of $10,000 each.
+        Help me organize a 3-day offsite in Morocco for 14 colleagues from August 28-30 with a budget of $5,000 each.
         Please suggest accommodations, activities, coworking spaces, and detailed daily itinerary including transport.
         """
         ),

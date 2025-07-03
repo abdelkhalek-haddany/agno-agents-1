@@ -15,6 +15,19 @@ from dotenv import load_dotenv
 import importlib # Added import for dynamic loading
 import inspect # Added import for dynamic loading
 from typing import Dict, Any # Keep existing import
+from textwrap import dedent
+
+from agno.agent import Agent
+# from agno.app.fastapi import FastAPIApp
+from fastapi import FastAPI
+from agno.memory.v2 import Memory
+from agno.memory.v2.db.sqlite import SqliteMemoryDb
+from agno.models.openai import OpenAIChat
+from agno.storage.sqlite import SqliteStorage
+from agno.team.team import Team
+from agno.tools.duckduckgo import DuckDuckGoTools
+from agno.tools.exa import ExaTools
+from agno.tools.yfinance import YFinanceTools
 
 # Load environment variables
 load_dotenv()
@@ -29,12 +42,157 @@ load_dotenv()
 
 from utils.logging_config import setup_logging
 from config.settings import Settings
-from agno.agent import Agent
 
 
 # Initialize console and logging
 console = Console()
 logger = setup_logging()
+
+agent_storage_file = "tmp/agents.db"
+memory_storage_file = "tmp/memory.db"
+
+memory_db = SqliteMemoryDb(table_name="memory", db_file=memory_storage_file)
+memory = Memory(db=memory_db)
+
+simple_agent = Agent(
+    name="Simple Agent",
+    role="Answer basic questions",
+    agent_id="simple-agent",
+    model=OpenAIChat(id="gpt-4o-mini"),
+    storage=SqliteStorage(
+        table_name="simple_agent", db_file=agent_storage_file, auto_upgrade_schema=True
+    ),
+    memory=memory,
+    enable_user_memories=True,
+    add_history_to_messages=True,
+    num_history_responses=5,
+    add_datetime_to_instructions=True,
+    markdown=True,
+)
+
+web_agent = Agent(
+    name="Web Agent",
+    role="Search the web for information",
+    agent_id="web-agent",
+    model=OpenAIChat(id="gpt-4o"),
+    tools=[DuckDuckGoTools()],
+    instructions=[
+        "Break down the users request into 2-3 different searches.",
+        "Always include sources",
+    ],
+    storage=SqliteStorage(
+        table_name="web_agent", db_file=agent_storage_file, auto_upgrade_schema=True
+    ),
+    memory=memory,
+    enable_user_memories=True,
+    add_history_to_messages=True,
+    num_history_responses=5,
+    add_datetime_to_instructions=True,
+    markdown=True,
+)
+
+finance_agent = Agent(
+    name="Finance Agent",
+    role="Get financial data",
+    agent_id="finance-agent",
+    model=OpenAIChat(id="gpt-4o"),
+    tools=[
+        YFinanceTools(
+            stock_price=True,
+            analyst_recommendations=True,
+            company_info=True,
+            company_news=True,
+        )
+    ],
+    instructions=["Always use tables to display data"],
+    storage=SqliteStorage(
+        table_name="finance_agent", db_file=agent_storage_file, auto_upgrade_schema=True
+    ),
+    memory=memory,
+    enable_user_memories=True,
+    add_history_to_messages=True,
+    num_history_responses=5,
+    add_datetime_to_instructions=True,
+    markdown=True,
+)
+
+research_agent = Agent(
+    name="Research Agent",
+    role="Research agent",
+    model=OpenAIChat(id="gpt-4o"),
+    instructions=["You are a research agent"],
+    tools=[DuckDuckGoTools(), ExaTools()],
+    agent_id="research_agent",
+    memory=memory,
+    storage=SqliteStorage(
+        table_name="research_agent",
+        db_file=agent_storage_file,
+        auto_upgrade_schema=True,
+    ),
+    enable_user_memories=True,
+)
+
+research_team = Team(
+    name="Research Team",
+    description="A team of agents that research the web",
+    members=[research_agent, simple_agent],
+    model=OpenAIChat(id="gpt-4o"),
+    mode="coordinate",
+    team_id="research-team",
+    success_criteria=dedent("""
+        A comprehensive research report with clear sections and data-driven insights.
+    """),
+    instructions=[
+        "You are the lead researcher of a research team! 🔍",
+    ],
+    memory=memory,
+    enable_user_memories=True,
+    add_datetime_to_instructions=True,
+    show_tool_calls=True,
+    markdown=True,
+    enable_agentic_context=True,
+    storage=SqliteStorage(
+        table_name="research_team",
+        db_file=agent_storage_file,
+        auto_upgrade_schema=True,
+        mode="team",
+    ),
+)
+
+from agents.agent_with_instructions.agent import agent as agent_with_instructions
+from agents.youtube_agent.agent import youtube_agent
+from agents.translation_agent.agent import agent as translation_agent
+from agents.travel_agent.agent import travel_agent
+from agents.thinking_finance_agent.agent import finance_agent as thinking_finance_agent
+from agents.social_media_agent.agent import social_media_agent
+from agents.study_partner.agent import study_partner
+from agents.recipe_rag_image.agent import agent as recipe_rag_image_agent
+from agents.research_agent.agent import research_agent
+from agents.web_extraction_agent.agent import agent as web_extraction_agent
+
+fastapi_app = FastAPI(
+    agents=[
+        simple_agent,
+        web_agent,
+        finance_agent,
+        agent_with_instructions,
+        youtube_agent,
+        translation_agent,
+        travel_agent,
+        thinking_finance_agent,
+        social_media_agent,
+        study_partner,
+        recipe_rag_image_agent,
+        research_agent,
+        web_extraction_agent,
+    ],
+    teams=[research_team],
+    app_id="advanced-app",
+    name="Advanced FastAPI App",
+    description="A FastAPI app for advanced agents",
+    version="0.0.1",
+)
+app = fastapi_app.get_app()
 
 
 class AgentOrchestrator:
@@ -350,4 +508,11 @@ def main(agent: str = None, query: str = None, config: str = None):
 
 
 if __name__ == "__main__":
-    main()
+    """
+    Now you can reach your agents/teams with the following URLs:
+    - http://localhost:8001/runs?agent_id=simple-agent
+    - http://localhost:8001/runs?agent_id=web-agent
+    - http://localhost:8001/runs?agent_id=finance-agent
+    - http://localhost:8001/runs?team_id=research-team
+    """
+    fastapi_app.serve(app="advanced:app", port=8001, reload=True)
